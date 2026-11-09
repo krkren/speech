@@ -93,6 +93,16 @@ class AndroidBackend : public Backend {
 		return failed(e) ? -1 : r;
 	}
 
+	// Calls a TextToSpeech method returning boolean, false on an exception (CheckJNI, on in a
+	// debuggable app, aborts the process when the call's return type doesn't match the method's)
+	bool callBool(JNIEnv *e, const char *name, const char *sig) {
+		jclass cls = e->GetObjectClass(tts);
+		jmethodID m = e->GetMethodID(cls, name, sig);
+		if (failed(e) || !m) return false;
+		jboolean r = e->CallBooleanMethod(tts, m);
+		return failed(e) ? false : r == JNI_TRUE;
+	}
+
 	// The Voice object whose name is `name`, or null
 	jobject findVoice(JNIEnv *e, const std::string &name) {
 		jclass cls = e->GetObjectClass(tts);
@@ -267,7 +277,7 @@ public:
 				}
 			} else if (e) {
 				polls++;
-				bool speaking = callInt(e, "isSpeaking", "()Z") > 0;
+				bool speaking = callBool(e, "isSpeaking", "()Z");
 				if (speaking) sawSpeaking = true;
 				long size = fileSize(request.file);
 				stable = (size > 44 && size == lastSize) ? stable + 1 : 0;
