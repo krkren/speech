@@ -17,12 +17,14 @@ EM_JS(int, speech_web_available, (), {
 
 // the voices as "id\tname\tlang\n" lines, into buf; the length it needs
 EM_JS(int, speech_web_voices, (char *buf, int size), {
-	var s = "";
+	// no backslash escapes in here: the C preprocessor turns them into the characters themselves
+	var s = "", TAB = String.fromCharCode(9), NL = String.fromCharCode(10);
+	var clean = function(x) { return String(x).split(TAB).join(" ").split(NL).join(" "); };
 	try {
 		var vs = window.speechSynthesis.getVoices() || [];
 		for (var k = 0; k < vs.length; k++) {
 			var v = vs[k];
-			s += String(v.voiceURI).replace(/[\t\n]/g, " ") + "\t" + String(v.name).replace(/[\t\n]/g, " ") + "\t" + String(v.lang || "") + "\n";
+			s += clean(v.voiceURI) + TAB + clean(v.name) + TAB + clean(v.lang || "") + NL;
 		}
 	} catch (e) {}
 	var need = lengthBytesUTF8(s) + 1;
